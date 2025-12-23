@@ -11,6 +11,7 @@ import torch.nn as nn
 from tqdm import trange
 import warnings, sys
 warnings.simplefilter(action='ignore', category=FutureWarning)
+dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class MyNetwork(nn.Module):
     """Feedforward neural network that approximates the Q-function.
@@ -86,7 +87,7 @@ for i in EPISODES:
         # Get next state and reward.  The done variable
         # will be True if you reached the goal position,
         # False otherwise
-        q_values = model(torch.tensor(state))
+        q_values = model(torch.tensor(state, device=dev))
         _, action = torch.max(q_values, dim=0)
         next_state, reward, done, truncated, _ = env.step(action.item())
 
