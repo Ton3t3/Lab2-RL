@@ -7,11 +7,33 @@
 import numpy as np
 import gymnasium as gym
 import torch
+import torch.nn as nn
 from tqdm import trange
 import warnings, sys
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+class MyNetwork(nn.Module):
+    """Feedforward neural network that approximates the Q-function.
 
+       The network takes the current state as input and outputs Q-values for all possible actions.
+       The action corresponding to the highest Q-value is considered the optimal action.
+       - The input size corresponds to the state dimension of the environment.
+       - The network has one hidden layer with 64 neurons and ReLU activation.
+       - The output layer has one neuron per action (Q-values for each action)."""
+
+    def __init__(self, input_size, output_size, neurons_per_layer):
+        super().__init__()
+        self.input_layer = nn.Linear(input_size, neurons_per_layer)  # First layer: state -> hidden layer
+        self.hidden_layer = nn.Linear(neurons_per_layer, neurons_per_layer)  # Second layer: hidden -> hidden layer
+        self.output_layer = nn.Linear(neurons_per_layer, output_size)  # Output layer: hidden -> Q-values
+        self.activation = nn.ReLU()  # ReLU activation function for hidden layers
+
+    def forward(self, x):
+        """Define forward pass"""
+        x = self.activation(self.input_layer(x))  # Apply input layer and ReLU
+        x = self.activation(self.hidden_layer(x))  # Apply hidden layer and ReLU
+        return self.output_layer(x)  # Return Q-values for all actions
+##
 def running_average(x, N):
     ''' Function used to compute the running average
         of the last N elements of a vector x
