@@ -11,6 +11,9 @@ import torch.nn as nn
 from tqdm import trange
 import warnings, sys
 warnings.simplefilter(action='ignore', category=FutureWarning)
+from mpl_toolkits import mplot3d
+import numpy as np
+import matplotlib.pyplot as plt
 dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class MyNetwork(nn.Module):
@@ -111,3 +114,47 @@ if avg_reward - confidence >= CONFIDENCE_PASS:
     print('Your policy passed the test!')
 else:
     print("Your policy did not pass the test! The average reward of your policy needs to be greater than {} with 95% confidence".format(CONFIDENCE_PASS))
+
+#$#$#$#$#$#$#$#$#$#$#$#$#$#$
+#$   PLOT THE 3D GRAPHS   #$
+#$#$#$#$#$#$#$#$#$#$#$#$#$#$
+
+y_array = np.linspace(0,1.5,100)
+w_1 = np.linspace(0, np.pi)
+w_2 = -w_1[::-1][:-1]
+w_array = np.concatenate([w_2, w_1])
+input_array = []
+q_max_array = []
+action_max_array = []
+
+for y in y_array:
+  for w in w_array:
+    q_values_limited = model(torch.tensor([0, y, 0, 0, w, 0, 0, 0], device=dev, dtype=torch.float32))
+    q_max, action_max = torch.max(q_values_limited, dim = 0)
+    input_array.append((y,w))
+    q_max_array.append(q_max.cpu().item())
+    action_max_array.append(action_max.cpu().item())
+
+fig = plt.figure(figsize=(80/6,10), dpi=80)
+ax = plt.axes(projection='3d')
+
+z = q_max_array
+x = [s[0] for s in input_array]
+y = [s[1] for s in input_array]
+
+ax.scatter(x, y, z, c=z, s=20)
+ax.set_title('3D Scatter Plot of Max Q-values')
+ax.set_xlabel("Vertical position (y)")
+ax.set_ylabel("Angle (w)")
+plt.show()
+
+fig = plt.figure(figsize=(80/6,10), dpi=80)
+ax = plt.axes(projection='3d')
+
+z = action_max_array
+
+ax.scatter(x, y, z, c=z, s=20)
+ax.set_title('Optimal action policy landscape')
+ax.set_xlabel("Vertical position (y)")
+ax.set_ylabel("Angle (w)")
+plt.show()
